@@ -186,4 +186,4 @@ schematica/
 
 ## License
 
-MIT — Free and open source for education.
+GPL, Free and open source for education.
