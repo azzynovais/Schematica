@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="8" fill="#FFFBF0" stroke="#1A1A2E" stroke-width="4"/>
+  <!-- Atom orbits -->
+  <ellipse cx="32" cy="30" rx="22" ry="10" fill="none" stroke="#FF6B6B" stroke-width="3" transform="rotate(-30 32 30)"/>
+  <ellipse cx="32" cy="30" rx="22" ry="10" fill="none" stroke="#4ECDC4" stroke-width="3" transform="rotate(30 32 30)"/>
+  <ellipse cx="32" cy="30" rx="22" ry="10" fill="none" stroke="#FFE66D" stroke-width="3" transform="rotate(90 32 30)"/>
+  <!-- Nucleus -->
+  <circle cx="32" cy="30" r="5" fill="#1A1A2E"/>
+  <!-- Pi symbol (math) -->
+  <text x="8" y="18" font-family="serif" font-size="14" font-weight="bold" fill="#6C5CE7">&#x03C0;</text>
+  <!-- DNA helix hint (biology) -->
+  <path d="M48 44 Q52 48 48 52 Q44 56 48 60" fill="none" stroke="#A8E6CF" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M52 44 Q48 48 52 52 Q56 56 52 60" fill="none" stroke="#A8E6CF" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Lightning bolt (physics) -->
+  <polygon points="6,52 12,42 10,42 16,34 14,34 20,26 12,38 14,38 8,48 10,48" fill="#FFE66D" stroke="#1A1A2E" stroke-width="1"/>
+  <!-- Flask (chemistry) -->
+  <path d="M44 8 L44 20 L38 32 Q36 36 38 38 L38 38 L50 38 Q52 36 50 32 L44 20" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linejoin="round"/>
+  <line x1="41" y1="8" x2="47" y2="8" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="43" cy="33" r="2" fill="#4ECDC4"/>
+  <circle cx="46" cy="35" r="1.5" fill="#FFE66D"/>
+</svg>

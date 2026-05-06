@@ -1,0 +1,2536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schematica — Chemistry, Math, Physics & Biology Calculator</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* Critical CSS — ensures layout works even if external CSS fails to load */
+    :root{--clr-bg:#FFFBF0;--clr-surface:#FFF;--clr-ink:#1A1A2E;--clr-ink-light:#4A4A6A;--clr-muted:#9494A8;--clr-primary:#6C5CE7;--clr-secondary:#FF6B6B;--clr-tertiary:#4ECDC4;--clr-warning:#FFE66D;--clr-success:#A8E6CF;--border-width:3px;--border-color:#1A1A2E;--shadow-offset:4px;--shadow-color:#1A1A2E;--shadow-sm:4px 4px 0 #1A1A2E;--font-body:'Space Mono','Courier New',monospace;--font-heading:'Space Grotesk',Impact,sans-serif;--font-mono:'JetBrains Mono','Fira Code',monospace;--header-height:70px;--sidebar-width:280px}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font-body);background:var(--clr-bg);color:var(--clr-ink);line-height:1.6;min-height:100vh}
+    .app{display:flex;flex-direction:column;min-height:100vh}
+    .header{background:var(--clr-surface);border-bottom:var(--border-width) solid var(--border-color);padding:0 1.5rem;height:var(--header-height);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000}
+    .main-layout{display:flex;flex:1}
+    .sidebar{width:var(--sidebar-width);background:var(--clr-surface);border-right:var(--border-width) solid var(--border-color);padding:1rem;overflow-y:auto;height:calc(100vh - var(--header-height));position:sticky;top:var(--header-height);flex-shrink:0}
+    .content{flex:1;padding:2rem;max-width:calc(100% - var(--sidebar-width));overflow-y:auto}
+    .page{display:none}.page.active{display:block}
+    .hidden{display:none!important}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.75rem 1.5rem;font-weight:700;text-transform:uppercase;border:var(--border-width) solid var(--border-color);box-shadow:var(--shadow-sm);background:var(--clr-surface);color:var(--clr-ink);cursor:pointer;transition:all 100ms}
+    .btn:hover{box-shadow:2px 2px 0 var(--shadow-color);transform:translate(2px,2px)}
+    .btn--primary{background:var(--clr-primary);color:#fff}
+    .btn--secondary{background:var(--clr-secondary);color:#fff}
+    .btn--tertiary{background:var(--clr-tertiary);color:var(--clr-ink)}
+    .btn--success{background:var(--clr-success);color:var(--clr-ink)}
+    .btn--warning{background:var(--clr-warning);color:var(--clr-ink)}
+    .input-field{padding:0.75rem 1rem;border:var(--border-width) solid var(--border-color);font-family:var(--font-mono);font-size:1rem;background:var(--clr-surface);color:var(--clr-ink);box-shadow:var(--shadow-sm);outline:none;width:100%}
+    .input-field:focus{box-shadow:2px 2px 0 var(--shadow-color);transform:translate(2px,2px);border-color:var(--clr-primary)}
+    .input-group{display:flex;flex-direction:column;gap:0.5rem}
+    .input-group label{font-weight:700;text-transform:uppercase;font-size:0.875rem}
+    .sidebar__link{display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;font-weight:600;text-transform:uppercase;color:var(--clr-ink);text-decoration:none;border:2px solid transparent;cursor:pointer}
+    .sidebar__link:hover{background:var(--clr-bg);border-color:var(--border-color);color:var(--clr-ink)}
+    .sidebar__link.active{background:var(--clr-ink);color:var(--clr-surface);border-color:var(--clr-ink)}
+    .calc-card{background:var(--clr-surface);border:var(--border-width) solid var(--border-color);box-shadow:var(--shadow-sm);padding:1.5rem}
+    .calc-card__title{font-size:1.25rem;font-weight:700;text-transform:uppercase;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:2px dashed var(--clr-muted)}
+    .calc-card__inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1rem}
+    .calc-card__actions{display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem}
+    .result-box{background:var(--clr-ink);color:var(--clr-warning);padding:1rem 1.5rem;border:var(--border-width) solid var(--border-color);font-family:var(--font-mono);font-size:1.125rem;box-shadow:var(--shadow-sm);position:relative}
+    .result-box::before{content:'>';position:absolute;top:1rem;left:0.75rem;color:var(--clr-tertiary);font-weight:bold}
+    .result-box .result-value{margin-left:1.5rem;word-break:break-word}
+    .result-box .result-label{font-size:0.75rem;color:var(--clr-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem}
+    .formula-ref{background:#F0E6FF;border:var(--border-width) solid var(--clr-primary);padding:1rem;margin-top:1rem;box-shadow:3px 3px 0 var(--clr-primary)}
+    .formula-ref__title{font-weight:700;text-transform:uppercase;color:var(--clr-primary);margin-bottom:0.5rem;font-size:0.875rem}
+    .formula-ref__formula{font-family:var(--font-mono);font-size:1.125rem;padding:0.5rem;background:#fff;border:2px solid var(--clr-primary);margin-bottom:0.5rem}
+    .formula-ref__explanation{font-size:0.875rem;color:var(--clr-ink-light);line-height:1.6}
+    .home-hero{background:var(--clr-ink);color:var(--clr-surface);padding:3rem 2rem;margin-bottom:2rem;border:var(--border-width) solid var(--border-color);box-shadow:8px 8px 0 var(--shadow-color);position:relative;overflow:hidden}
+    .home-hero__title{font-size:2.5rem;margin-bottom:1rem;font-weight:700;text-transform:uppercase}
+    .home-hero__title span{color:var(--clr-warning)}
+    .tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-top:1.5rem}
+    .tool-card{background:var(--clr-surface);border:var(--border-width) solid var(--border-color);box-shadow:var(--shadow-sm);padding:1.5rem;cursor:pointer;transition:all 200ms;text-decoration:none;color:var(--clr-ink);display:block}
+    .tool-card:hover{box-shadow:8px 8px 0 var(--shadow-color);transform:translate(-4px,-4px);color:var(--clr-ink)}
+    .tool-card__title{font-weight:700;font-size:1.25rem;text-transform:uppercase;margin-bottom:0.5rem}
+    .tool-card__desc{font-size:0.875rem;color:var(--clr-ink-light);line-height:1.5}
+    .tag{display:inline-flex;align-items:center;padding:0.25rem 0.75rem;font-weight:700;text-transform:uppercase;border:2px solid var(--border-color);font-size:0.75rem}
+    .divider{border:none;border-top:var(--border-width) solid var(--border-color);margin:1.5rem 0}
+    .page-intro{background:var(--clr-surface);border:var(--border-width) solid var(--border-color);box-shadow:var(--shadow-sm);padding:1.5rem;margin-bottom:1.5rem}
+    .section-header__title{font-size:2rem;font-weight:700;text-transform:uppercase;margin-bottom:0.5rem}
+    .section-header__subtitle{font-size:1rem;color:var(--clr-ink-light);font-weight:400;text-transform:none}
+    .lang-switcher{display:flex;border:var(--border-width) solid var(--border-color);overflow:hidden;box-shadow:var(--shadow-sm)}
+    .lang-btn{padding:0.5rem 0.75rem;font-weight:700;text-transform:uppercase;background:var(--clr-surface);border:none;color:var(--clr-ink);cursor:pointer;border-right:2px solid var(--border-color)}
+    .lang-btn:last-child{border-right:none}
+    .lang-btn.active{background:var(--clr-ink);color:var(--clr-warning)}
+    .menu-toggle{display:none;background:var(--clr-surface);border:var(--border-width) solid var(--border-color);box-shadow:var(--shadow-sm);padding:0.5rem 0.75rem;font-size:1.25rem}
+    .header__brand{display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:var(--clr-ink);border:none}
+    .header__brand:hover{background:transparent}
+    .header__logo{width:40px;height:40px;border:var(--border-width) solid var(--border-color);box-shadow:var(--shadow-sm)}
+    .header__title{font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-size:1.5rem}
+    .header__title span{color:var(--clr-primary)}
+    .header__actions{display:flex;align-items:center;gap:0.75rem}
+    .footer{background:var(--clr-ink);color:var(--clr-surface);padding:1.5rem;text-align:center;border-top:var(--border-width) solid var(--clr-warning);font-family:var(--font-mono);font-size:0.875rem;margin-top:auto}
+    .sidebar__section{margin-bottom:1.5rem}
+    .sidebar__section-title{font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--clr-muted);padding:0.5rem 0.75rem;margin-bottom:0.25rem;font-size:0.75rem}
+    .scroll-top{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--clr-primary);color:#fff;border:var(--border-width) solid var(--border-color);box-shadow:var(--shadow-sm);width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;z-index:900;opacity:0;transition:all 200ms;cursor:pointer}
+    .scroll-top.visible{opacity:1}
+    .overlay{display:none;position:fixed;top:var(--header-height);left:0;width:100%;height:100%;background:rgba(26,26,46,0.5);z-index:998}
+    .overlay.active{display:block}
+    .pt-element{display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--border-color);padding:2px;cursor:pointer;transition:all 100ms;min-height:48px;min-width:42px;background:var(--clr-surface)}
+    .pt-element:hover{transform:scale(1.3);z-index:10;box-shadow:6px 6px 0 var(--shadow-color)}
+    .pt-element__number{font-size:8px;color:var(--clr-muted)}
+    .pt-element__symbol{font-weight:700;font-size:0.875rem}
+    .pt-element__mass{font-size:7px;color:var(--clr-ink-light)}
+    .periodic-table{display:grid;grid-template-columns:repeat(18,1fr);gap:2px;font-size:0.75rem;overflow-x:auto;padding:1rem}
+    .card{background:var(--clr-surface);border:var(--border-width) solid var(--border-color);box-shadow:var(--shadow-sm);padding:1.5rem;transition:all 200ms}
+    .card--chemistry{border-left:6px solid var(--clr-secondary)}
+    .mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.mt-8{margin-top:2rem}.mb-2{margin-bottom:0.5rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}
+    .flex{display:flex}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-between{justify-content:space-between}
+    .text-center{text-align:center}.text-sm{font-size:0.875rem}.text-xs{font-size:0.75rem}.text-muted{color:var(--clr-muted)}.font-mono{font-family:var(--font-mono)}.font-heading{font-family:var(--font-heading)}
+    .w-full{width:100%}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
+    @media(max-width:768px){.menu-toggle{display:block}.sidebar{position:fixed;left:-100%;top:var(--header-height);width:100%;height:calc(100vh - var(--header-height));z-index:999;transition:left 300ms}.sidebar.open{left:0}.content{max-width:100%;padding:1rem}.tools-grid{grid-template-columns:1fr}.header__title{font-size:1.125rem}.calc-card__inputs{grid-template-columns:1fr}.lang-switcher{display:none}.home-hero__title{font-size:1.5rem}}
+  </style>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/layout.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ====== HEADER ====== -->
+    <header class="header">
+      <a href="#home" class="header__brand" onclick="App.navigate('home')">
+        <img src="assets/favicon.svg" alt="Schematica" class="header__logo">
+        <span class="header__title">Schema<span>tica</span></span>
+      </a>
+
+      <div class="header__actions">
+        <div class="lang-switcher">
+          <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="pt">PT</button>
+          <button class="lang-btn" data-lang="es">ES</button>
+        </div>
+        <button class="menu-toggle" id="menuToggle">&#9776;</button>
+      </div>
+    </header>
+
+    <!-- ====== MAIN LAYOUT ====== -->
+    <div class="main-layout">
+      <!-- Sidebar -->
+      <nav class="sidebar" id="sidebar">
+        <div class="sidebar__section">
+          <input type="text" id="searchInput" class="input-field" data-i18n="search_placeholder" placeholder="Search tools..." style="margin-bottom:var(--sp-4);">
+          <div class="mobile-lang" style="display:none;">
+            <button class="lang-btn" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="pt">PT</button>
+            <button class="lang-btn" data-lang="es">ES</button>
+          </div>
+        </div>
+
+        <div class="sidebar__section">
+          <div class="sidebar__section-title" data-i18n="home">Home</div>
+          <a href="#home" class="sidebar__link active" data-page="home">
+            <span class="sidebar__link-icon">&#127968;</span>
+            <span data-i18n="home">Home</span>
+          </a>
+        </div>
+
+        <div class="sidebar__section">
+          <div class="sidebar__section-title" data-i18n="chemistry">Chemistry</div>
+          <a href="#chemistry" class="sidebar__link" data-page="chemistry">
+            <span class="sidebar__link-icon">&#9879;</span>
+            <span data-i18n="chemistry">Chemistry</span>
+          </a>
+          <a href="#periodic" class="sidebar__link" data-page="periodic">
+            <span class="sidebar__link-icon">&#9883;</span>
+            <span data-i18n="periodic_table">Periodic Table</span>
+          </a>
+          <a href="#solutions" class="sidebar__link" data-page="solutions">
+            <span class="sidebar__link-icon">&#129514;</span>
+            <span data-i18n="solutions">Solutions</span>
+          </a>
+          <a href="#stoichiometry" class="sidebar__link" data-page="stoichiometry">
+            <span class="sidebar__link-icon">&#9878;</span>
+            <span data-i18n="stoichiometry">Stoichiometry</span>
+          </a>
+          <a href="#thermochemistry" class="sidebar__link" data-page="thermochemistry">
+            <span class="sidebar__link-icon">&#128293;</span>
+            <span data-i18n="thermochemistry">Thermochemistry</span>
+          </a>
+          <a href="#electrochemistry" class="sidebar__link" data-page="electrochemistry">
+            <span class="sidebar__link-icon">&#9889;</span>
+            <span data-i18n="electrochemistry">Electrochemistry</span>
+          </a>
+          <a href="#kinetics" class="sidebar__link" data-page="kinetics">
+            <span class="sidebar__link-icon">&#9201;</span>
+            <span data-i18n="chemical_kinetics">Chemical Kinetics</span>
+          </a>
+          <a href="#organic" class="sidebar__link" data-page="organic">
+            <span class="sidebar__link-icon">&#129516;</span>
+            <span data-i18n="organic_chemistry">Organic Chemistry</span>
+          </a>
+          <a href="#acidbase" class="sidebar__link" data-page="acidbase">
+            <span class="sidebar__link-icon">&#129528;</span>
+            <span data-i18n="acid_base">Acids & Bases</span>
+          </a>
+          <a href="#gaslaws" class="sidebar__link" data-page="gaslaws">
+            <span class="sidebar__link-icon">&#127767;</span>
+            <span>Gas Laws</span>
+          </a>
+          <a href="#colligative" class="sidebar__link" data-page="colligative">
+            <span class="sidebar__link-icon">&#10052;</span>
+            <span>Colligative Properties</span>
+          </a>
+          <a href="#ksp" class="sidebar__link" data-page="ksp">
+            <span class="sidebar__link-icon">&#9876;</span>
+            <span>Solubility Product Ksp</span>
+          </a>
+          <a href="#empirical" class="sidebar__link" data-page="empirical">
+            <span class="sidebar__link-icon">&#128300;</span>
+            <span>Empirical Formula</span>
+          </a>
+        </div>
+
+        <div class="sidebar__section">
+          <div class="sidebar__section-title" data-i18n="math">Math</div>
+          <a href="#math" class="sidebar__link" data-page="math">
+            <span class="sidebar__link-icon">&#128290;</span>
+            <span data-i18n="math">Math</span>
+          </a>
+          <a href="#trig" class="sidebar__link" data-page="trig">
+            <span class="sidebar__link-icon">&#128302;</span>
+            <span>Trigonometry</span>
+          </a>
+          <a href="#linearsystem" class="sidebar__link" data-page="linearsystem">
+            <span class="sidebar__link-icon">&#128201;</span>
+            <span>Linear System</span>
+          </a>
+          <a href="#financial" class="sidebar__link" data-page="financial">
+            <span class="sidebar__link-icon">&#128176;</span>
+            <span>Financial Math</span>
+          </a>
+          <a href="#scinotation" class="sidebar__link" data-page="scinotation">
+            <span class="sidebar__link-icon">&#x207F;</span>
+            <span>Scientific Notation</span>
+          </a>
+          <a href="#percentage" class="sidebar__link" data-page="percentage">
+            <span class="sidebar__link-icon">&#37;</span>
+            <span>Percentage</span>
+          </a>
+        </div>
+
+        <div class="sidebar__section">
+          <div class="sidebar__section-title" data-i18n="physics">Physics</div>
+          <a href="#physics" class="sidebar__link" data-page="physics">
+            <span class="sidebar__link-icon">&#127749;</span>
+            <span data-i18n="physics">Physics</span>
+          </a>
+          <a href="#coulomb" class="sidebar__link" data-page="coulomb">
+            <span class="sidebar__link-icon">&#9889;</span>
+            <span>Coulomb's Law</span>
+          </a>
+          <a href="#gravitation" class="sidebar__link" data-page="gravitation">
+            <span class="sidebar__link-icon">&#127758;</span>
+            <span>Gravitation</span>
+          </a>
+          <a href="#calorimetry" class="sidebar__link" data-page="calorimetry">
+            <span class="sidebar__link-icon">&#127777;</span>
+            <span>Calorimetry</span>
+          </a>
+          <a href="#torque" class="sidebar__link" data-page="torque">
+            <span class="sidebar__link-icon">&#128260;</span>
+            <span>Torque</span>
+          </a>
+          <a href="#doppler" class="sidebar__link" data-page="doppler">
+            <span class="sidebar__link-icon">&#128266;</span>
+            <span>Doppler Effect</span>
+          </a>
+          <a href="#projectile" class="sidebar__link" data-page="projectile">
+            <span class="sidebar__link-icon">&#127923;</span>
+            <span>Projectile Motion</span>
+          </a>
+          <a href="#lenses" class="sidebar__link" data-page="lenses">
+            <span class="sidebar__link-icon">&#128302;</span>
+            <span>Thin Lenses</span>
+          </a>
+        </div>
+
+        <div class="sidebar__section">
+          <div class="sidebar__section-title" data-i18n="biology">Biology</div>
+          <a href="#biology" class="sidebar__link" data-page="biology">
+            <span class="sidebar__link-icon">&#127807;</span>
+            <span data-i18n="biology">Biology</span>
+          </a>
+          <a href="#chisquare" class="sidebar__link" data-page="chisquare">
+            <span class="sidebar__link-icon">&#967;</span>
+            <span>Chi-Square</span>
+          </a>
+          <a href="#dnarna" class="sidebar__link" data-page="dnarna">
+            <span class="sidebar__link-icon">&#129516;</span>
+            <span>DNA/RNA</span>
+          </a>
+          <a href="#bloodtypes" class="sidebar__link" data-page="bloodtypes">
+            <span class="sidebar__link-icon">&#129653;</span>
+            <span>Blood Types</span>
+          </a>
+          <a href="#bmi" class="sidebar__link" data-page="bmi">
+            <span class="sidebar__link-icon">&#9878;</span>
+            <span>BMI</span>
+          </a>
+        </div>
+
+        <div class="sidebar__section">
+          <div class="sidebar__section-title" data-i18n="converters">Converters</div>
+          <a href="#converters" class="sidebar__link" data-page="converters">
+            <span class="sidebar__link-icon">&#128260;</span>
+            <span data-i18n="converters">Converters</span>
+          </a>
+          <a href="#convlength" class="sidebar__link" data-page="convlength">
+            <span class="sidebar__link-icon">&#128207;</span>
+            <span>Length</span>
+          </a>
+          <a href="#convtime" class="sidebar__link" data-page="convtime">
+            <span class="sidebar__link-icon">&#9201;</span>
+            <span>Time</span>
+          </a>
+          <a href="#convspeed" class="sidebar__link" data-page="convspeed">
+            <span class="sidebar__link-icon">&#127739;</span>
+            <span>Speed</span>
+          </a>
+          <a href="#convdensity" class="sidebar__link" data-page="convdensity">
+            <span class="sidebar__link-icon">&#9878;</span>
+            <span>Density</span>
+          </a>
+          <a href="#convarea" class="sidebar__link" data-page="convarea">
+            <span class="sidebar__link-icon">&#9634;</span>
+            <span>Area</span>
+          </a>
+          <a href="#convpower" class="sidebar__link" data-page="convpower">
+            <span class="sidebar__link-icon">&#9889;</span>
+            <span>Power</span>
+          </a>
+        </div>
+
+        <div class="sidebar__section" style="margin-top:auto;">
+          <div style="padding:var(--sp-3);font-size:var(--fs-xs);color:var(--clr-muted);font-family:var(--font-mono);">
+            Schematica v1.0<br>Pure HTML/CSS/JS
+          </div>
+        </div>
+      </nav>
+
+      <!-- Overlay (mobile) -->
+      <div class="overlay" id="overlay"></div>
+
+      <!-- Content Area -->
+      <main class="content" id="content">
+
+        <!-- ==================== HOME ==================== -->
+        <div class="page active" id="page-home">
+          <div class="home-hero">
+            <h1 class="home-hero__title" data-i18n="hero_title" data-i18n-html="hero_title">Calculate <span>Everything</span></h1>
+            <p class="home-hero__subtitle" data-i18n="hero_subtitle">Your academic companion for Chemistry, Math, Physics and Biology. From high school to university level.</p>
+          </div>
+
+          <div class="tools-grid">
+            <div class="tool-card" data-page="chemistry" style="border-top:5px solid var(--clr-chemistry);">
+              <div class="tool-card__icon">&#9879;</div>
+              <div class="tool-card__title" data-i18n="tool_chemistry_title">Chemistry</div>
+              <div class="tool-card__desc" data-i18n="tool_chemistry_desc">Organic, Inorganic, Solutions, Stoichiometry, Thermochemistry and more.</div>
+              <span class="tag tag--chemistry tool-card__tag">Chem</span>
+            </div>
+
+            <div class="tool-card" data-page="math" style="border-top:5px solid var(--clr-math);">
+              <div class="tool-card__icon">&#128290;</div>
+              <div class="tool-card__title" data-i18n="tool_math_title">Math</div>
+              <div class="tool-card__desc" data-i18n="tool_math_desc">Algebra, Calculus, Statistics, Logarithms and equation solvers.</div>
+              <span class="tag tag--math tool-card__tag">Math</span>
+            </div>
+
+            <div class="tool-card" data-page="physics" style="border-top:5px solid var(--clr-physics);">
+              <div class="tool-card__icon">&#127749;</div>
+              <div class="tool-card__title" data-i18n="tool_physics_title">Physics</div>
+              <div class="tool-card__desc" data-i18n="tool_physics_desc">Mechanics, Thermodynamics, Electricity, Optics and waves.</div>
+              <span class="tag tag--physics tool-card__tag">Phys</span>
+            </div>
+
+            <div class="tool-card" data-page="biology" style="border-top:5px solid var(--clr-biology);">
+              <div class="tool-card__icon">&#127807;</div>
+              <div class="tool-card__title" data-i18n="tool_biology_title">Biology</div>
+              <div class="tool-card__desc" data-i18n="tool_biology_desc">Genetics, Ecology, Biochemistry and population dynamics.</div>
+              <span class="tag tag--biology tool-card__tag">Bio</span>
+            </div>
+
+            <div class="tool-card" data-page="converters" style="border-top:5px solid var(--clr-warning);">
+              <div class="tool-card__icon">&#128260;</div>
+              <div class="tool-card__title" data-i18n="tool_converters_title">Converters</div>
+              <div class="tool-card__desc" data-i18n="tool_converters_desc">Temperature, Pressure, Concentration, Molar Mass and unit converters.</div>
+              <span class="tag tag--converter tool-card__tag">Conv</span>
+            </div>
+
+            <div class="tool-card" data-page="periodic" style="border-top:5px solid var(--clr-secondary);">
+              <div class="tool-card__icon">&#9883;</div>
+              <div class="tool-card__title" data-i18n="periodic_table">Periodic Table</div>
+              <div class="tool-card__desc">Interactive periodic table with element data, atomic mass, and categories.</div>
+              <span class="tag tag--chemistry tool-card__tag">PT</span>
+            </div>
+          </div>
+
+          <div class="page-intro mt-8">
+            <h3 data-i18n="about" style="margin-bottom:var(--sp-3);">About Schematica</h3>
+            <p data-i18n="about_text">Schematica is an academic tool designed to help students and teachers calculate, understand, and teach Chemistry, Mathematics, Physics, and Biology. Every formula includes its source and explanation so you learn not just the answer, but why it works.</p>
+            <p class="mt-4 text-sm text-muted" data-i18n="made_with">Made with passion for science education.</p>
+          </div>
+        </div>
+
+        <!-- ==================== CHEMISTRY ==================== -->
+        <div class="page" id="page-chemistry">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#9879; <span data-i18n="chemistry">Chemistry</span></h1>
+            <p class="section-header__subtitle" data-i18n="tool_chemistry_desc">Organic, Inorganic, Solutions, Stoichiometry, Thermochemistry and more.</p>
+          </div>
+
+          <div class="calc-container" id="molarMassCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="molar_mass">Molar Mass Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="compound_formula">Compound Formula</label>
+                  <input type="text" id="compoundFormulaInput" class="input-field" placeholder="e.g. H2SO4, NaCl, C6H12O6">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcMolarMassBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearMolarMassBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="molarMassResult"></div>
+              <div id="molarMassFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== PERIODIC TABLE ==================== -->
+        <div class="page" id="page-periodic">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#9883; <span data-i18n="periodic_table">Periodic Table</span></h1>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <div class="periodic-table" id="periodicTableGrid"></div>
+          </div>
+
+          <div class="flex flex-wrap gap-4 mt-6">
+            <span class="tag" style="background:#FFB3BA;">Alkali</span>
+            <span class="tag" style="background:#FFDFBA;">Alkaline Earth</span>
+            <span class="tag" style="background:#BAFFC9;">Transition</span>
+            <span class="tag" style="background:#BAE1FF;">Post-Transition</span>
+            <span class="tag" style="background:#E8BAFF;">Metalloid</span>
+            <span class="tag" style="background:#FFFFBA;">Nonmetal</span>
+            <span class="tag" style="background:#FFD9BA;">Halogen</span>
+            <span class="tag" style="background:#C9BAFF;">Noble Gas</span>
+            <span class="tag" style="background:#FFB3E6;">Lanthanide</span>
+            <span class="tag" style="background:#B3FFE0;">Actinide</span>
+          </div>
+
+          <!-- Element Detail Modal -->
+          <div id="elementModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+            <div style="max-width:400px;width:90%;" id="elementModalContent"></div>
+          </div>
+        </div>
+
+        <!-- ==================== SOLUTIONS ==================== -->
+        <div class="page" id="page-solutions">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#129514; <span data-i18n="solutions">Solutions</span></h1>
+          </div>
+
+          <div class="calc-container" id="concentrationCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="concentration">Concentration Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="solute_mass">Solute Mass (g)</label>
+                  <input type="number" id="concSoluteMass" class="input-field" placeholder="e.g. 5.85">
+                </div>
+                <div class="input-group">
+                  <label>Molar Mass (g/mol)</label>
+                  <input type="number" id="concMolarMass" class="input-field" placeholder="e.g. 58.44">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="solution_vol">Solution Volume (L)</label>
+                  <input type="number" id="concSolutionVol" class="input-field" placeholder="e.g. 0.5">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcConcentrationBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearConcentrationBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="concentrationResult"></div>
+              <div id="concentrationFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="calc-container" id="dilutionCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="dilution">Dilution Calculator (C1V1 = C2V2)</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="initial_conc">C1 (mol/L)</label>
+                  <input type="number" id="dilC1" class="input-field" placeholder="Initial concentration">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="initial_vol">V1 (L)</label>
+                  <input type="number" id="dilV1" class="input-field" placeholder="Initial volume">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="final_conc">C2 (mol/L)</label>
+                  <input type="number" id="dilC2" class="input-field" placeholder="Final concentration">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="final_vol">V2 (L)</label>
+                  <input type="number" id="dilV2" class="input-field" placeholder="Final volume">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcDilutionBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearDilutionBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="dilutionResult"></div>
+              <div id="dilutionFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="calc-container" id="phCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="ph_calculator">pH Calculator</h2>
+              <p class="text-sm text-muted mb-4">Enter any ONE value to calculate the rest.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="ph_value">pH</label>
+                  <input type="number" id="phValue" class="input-field" placeholder="e.g. 3.5" step="0.01">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="poh_value">pOH</label>
+                  <input type="number" id="pohValue" class="input-field" placeholder="e.g. 10.5" step="0.01">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="h_concentration">[H+] (mol/L)</label>
+                  <input type="number" id="hConc" class="input-field" placeholder="e.g. 0.001" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="oh_concentration">[OH-] (mol/L)</label>
+                  <input type="number" id="ohConc" class="input-field" placeholder="e.g. 1e-10" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcPhBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearPhBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="phResult"></div>
+              <div id="phFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== STOICHIOMETRY ==================== -->
+        <div class="page" id="page-stoichiometry">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#9878; <span data-i18n="stoichiometry">Stoichiometry</span></h1>
+          </div>
+
+          <div class="calc-container" id="idealGasCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="ideal_gas">Ideal Gas Law (PV = nRT)</h2>
+              <p class="text-sm text-muted mb-4">Fill in 3 of 4 fields to solve for the missing one.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="pressure">P (atm)</label>
+                  <input type="number" id="igPressure" class="input-field" placeholder="Pressure" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="volume">V (L)</label>
+                  <input type="number" id="igVolume" class="input-field" placeholder="Volume" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="moles">n (mol)</label>
+                  <input type="number" id="igMoles" class="input-field" placeholder="Moles" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="temperature">T (K)</label>
+                  <input type="number" id="igTemp" class="input-field" placeholder="Temperature" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcIdealGasBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearIdealGasBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="idealGasResult"></div>
+              <div id="idealGasFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="calc-container" id="limitingCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="limiting_reagent">Limiting Reagent</h2>
+              <p class="text-sm text-muted mb-4">Compare two reactants. Enter moles and stoichiometric coefficients.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Reagent 1 Moles</label>
+                  <input type="number" id="lrMoles1" class="input-field" placeholder="e.g. 2.5" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Reagent 1 Coefficient</label>
+                  <input type="number" id="lrCoeff1" class="input-field" placeholder="e.g. 1" step="1">
+                </div>
+                <div class="input-group">
+                  <label>Reagent 2 Moles</label>
+                  <input type="number" id="lrMoles2" class="input-field" placeholder="e.g. 3.0" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Reagent 2 Coefficient</label>
+                  <input type="number" id="lrCoeff2" class="input-field" placeholder="e.g. 2" step="1">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcLimitingBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearLimitingBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="limitingResult"></div>
+              <div id="limitingFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="calc-container" id="yieldCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="percent_yield">Percent Yield</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Theoretical Yield</label>
+                  <input type="number" id="yieldTheoretical" class="input-field" placeholder="e.g. 15.0" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Actual Yield</label>
+                  <input type="number" id="yieldActual" class="input-field" placeholder="e.g. 12.5" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcYieldBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearYieldBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="yieldResult"></div>
+              <div id="yieldFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== THERMOCHEMISTRY ==================== -->
+        <div class="page" id="page-thermochemistry">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#128293; <span data-i18n="thermochemistry">Thermochemistry</span></h1>
+          </div>
+
+          <div class="calc-container" id="gibbsCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Gibbs Free Energy</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="enthalpy">Enthalpy (kJ)</label>
+                  <input type="number" id="gibbsEnthalpy" class="input-field" placeholder="e.g. -100" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="entropy">Entropy (kJ/K)</label>
+                  <input type="number" id="gibbsEntropy" class="input-field" placeholder="e.g. 0.05" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="temperature">Temperature (K)</label>
+                  <input type="number" id="gibbsTemp" class="input-field" placeholder="e.g. 298" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcGibbsBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearGibbsBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="gibbsResult"></div>
+              <div id="gibbsFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== ELECTROCHEMISTRY ==================== -->
+        <div class="page" id="page-electrochemistry">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#9889; <span data-i18n="electrochemistry">Electrochemistry</span></h1>
+          </div>
+
+          <div class="calc-container" id="nernstCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Nernst Equation</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>E0 (Standard Potential, V)</label>
+                  <input type="number" id="nernstE0" class="input-field" placeholder="e.g. 1.23" step="any">
+                </div>
+                <div class="input-group">
+                  <label>n (Electrons Transferred)</label>
+                  <input type="number" id="nernstN" class="input-field" placeholder="e.g. 2" step="1">
+                </div>
+                <div class="input-group">
+                  <label>Q (Reaction Quotient)</label>
+                  <input type="number" id="nernstQ" class="input-field" placeholder="e.g. 0.01" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="temperature">T (K, default 298.15)</label>
+                  <input type="number" id="nernstT" class="input-field" placeholder="298.15" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcNernstBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearNernstBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="nernstResult"></div>
+              <div id="nernstFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== KINETICS ==================== -->
+        <div class="page" id="page-kinetics">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#9201; <span data-i18n="chemical_kinetics">Chemical Kinetics</span></h1>
+          </div>
+
+          <div class="calc-container" id="kineticsCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="half_life">Half-Life Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>k (Rate Constant)</label>
+                  <input type="number" id="kineticsK" class="input-field" placeholder="e.g. 0.05" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Reaction Order</label>
+                  <select id="kineticsOrder" class="input-field">
+                    <option value="0">Zero Order</option>
+                    <option value="1" selected>First Order</option>
+                    <option value="2">Second Order</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>[A]0 (Initial Concentration, for 0th/2nd)</label>
+                  <input type="number" id="kineticsC0" class="input-field" placeholder="e.g. 1.0" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcHalfLifeBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearHalfLifeBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="kineticsResult"></div>
+              <div id="kineticsFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== ORGANIC CHEMISTRY ==================== -->
+        <div class="page" id="page-organic">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#129516; <span data-i18n="organic_chemistry">Organic Chemistry</span></h1>
+          </div>
+
+          <div class="page-intro">
+            <h2 data-i18n="functional_groups">Functional Groups</h2>
+            <p class="text-sm text-muted mt-2">Reference table of the main organic functional groups, their IUPAC suffixes and prefixes.</p>
+          </div>
+          <div id="functionalGroupsList"></div>
+        </div>
+
+        <!-- ==================== ACIDS & BASES ==================== -->
+        <div class="page" id="page-acidbase">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#129528; <span data-i18n="acid_base">Acids & Bases</span></h1>
+          </div>
+
+          <div class="page-intro">
+            <h2>Strong Acids & Bases Reference</h2>
+            <p class="text-sm text-muted mt-2">These acids and bases dissociate completely in aqueous solution.</p>
+          </div>
+          <div id="acidBaseRef"></div>
+        </div>
+
+        <!-- ==================== MATH ==================== -->
+        <div class="page" id="page-math">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-math);">&#128290; <span data-i18n="math">Math</span></h1>
+          </div>
+
+          <!-- Quadratic -->
+          <div class="calc-container" id="quadraticCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="quadratic_equation">Quadratic Equation (ax2 + bx + c = 0)</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="coefficient_a">A</label>
+                  <input type="number" id="quadA" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="coefficient_b">B</label>
+                  <input type="number" id="quadB" class="input-field" placeholder="e.g. -5" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="coefficient_c">C</label>
+                  <input type="number" id="quadC" class="input-field" placeholder="e.g. 6" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcQuadraticBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearQuadraticBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="quadraticResult"></div>
+              <div id="quadraticFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Statistics -->
+          <div class="calc-container" id="statisticsCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="statistics">Statistics</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group" style="grid-column:1/-1;">
+                  <label data-i18n="data_set">Data Set (comma separated)</label>
+                  <input type="text" id="statData" class="input-field" placeholder="e.g. 4, 8, 6, 5, 3, 8, 9, 2, 7">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcStatisticsBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearStatisticsBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="statisticsResult"></div>
+              <div id="statisticsFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Logarithms -->
+          <div class="calc-container" id="logCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="logarithms">Logarithms</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="log_value">Value</label>
+                  <input type="number" id="logValue" class="input-field" placeholder="e.g. 100" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="log_base">Base (optional)</label>
+                  <input type="number" id="logBase" class="input-field" placeholder="e.g. 2, 10, e" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcLogBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearLogBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="logResult"></div>
+              <div id="logFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Combinations/Permutations -->
+          <div class="calc-container" id="combCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="combinations">Combinations & Permutations</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="n_value">n (total)</label>
+                  <input type="number" id="combN" class="input-field" placeholder="e.g. 10" step="1">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="r_value">r (selection)</label>
+                  <input type="number" id="combR" class="input-field" placeholder="e.g. 3" step="1">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcCombBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearCombBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="combResult"></div>
+              <div id="combFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Rule of Three -->
+          <div class="calc-container" id="rule3Calc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="rule_of_three">Rule of Three (Proportion)</h2>
+              <p class="text-sm text-muted mb-4">If A is to B as C is to X, find X.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>A</label>
+                  <input type="number" id="r3A" class="input-field" placeholder="e.g. 5" step="any">
+                </div>
+                <div class="input-group">
+                  <label>B</label>
+                  <input type="number" id="r3B" class="input-field" placeholder="e.g. 10" step="any">
+                </div>
+                <div class="input-group">
+                  <label>C</label>
+                  <input type="number" id="r3C" class="input-field" placeholder="e.g. 8" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcRule3Btn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearRule3Btn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="rule3Result"></div>
+              <div id="rule3Formula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== PHYSICS ==================== -->
+        <div class="page" id="page-physics">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-physics);">&#127749; <span data-i18n="physics">Physics</span></h1>
+          </div>
+
+          <!-- Newton's 2nd Law -->
+          <div class="calc-container" id="newtonCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="newton_laws">Newton's Second Law (F = ma)</h2>
+              <p class="text-sm text-muted mb-4">Fill in 2 of 3 fields.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="force">Force (N)</label>
+                  <input type="number" id="newtonF" class="input-field" placeholder="Force" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Mass (kg)</label>
+                  <input type="number" id="newtonM" class="input-field" placeholder="Mass" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="acceleration">Acceleration (m/s2)</label>
+                  <input type="number" id="newtonA" class="input-field" placeholder="Acceleration" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcNewtonBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearNewtonBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="newtonResult"></div>
+              <div id="newtonFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Kinematics -->
+          <div class="calc-container" id="kinematicsCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="kinematics">Kinematics (Uniformly Accelerated Motion)</h2>
+              <p class="text-sm text-muted mb-4">Fill in at least 3 of 5 variables.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="initial_velocity">v0 (m/s)</label>
+                  <input type="number" id="kinV0" class="input-field" placeholder="Initial velocity" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="final_velocity">v (m/s)</label>
+                  <input type="number" id="kinV" class="input-field" placeholder="Final velocity" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="acceleration">a (m/s2)</label>
+                  <input type="number" id="kinA" class="input-field" placeholder="Acceleration" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="distance">d (m)</label>
+                  <input type="number" id="kinD" class="input-field" placeholder="Displacement" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="time">t (s)</label>
+                  <input type="number" id="kinT" class="input-field" placeholder="Time" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcKinematicsBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearKinematicsBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="kinematicsResult"></div>
+              <div id="kinematicsFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Work & Energy -->
+          <div class="calc-container" id="workCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="work_energy">Work & Energy</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Mass (kg)</label>
+                  <input type="number" id="weMass" class="input-field" placeholder="e.g. 2" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="velocity">Velocity (m/s)</label>
+                  <input type="number" id="weVelocity" class="input-field" placeholder="for KE" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Height (m)</label>
+                  <input type="number" id="weHeight" class="input-field" placeholder="for PE" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcWorkBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearWorkBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="workResult"></div>
+              <div id="workFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Ohm's Law -->
+          <div class="calc-container" id="ohmCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="ohms_law">Ohm's Law (V = IR)</h2>
+              <p class="text-sm text-muted mb-4">Fill in 2 of 3 fields.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="voltage">Voltage (V)</label>
+                  <input type="number" id="ohmV" class="input-field" placeholder="Voltage" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="current">Current (A)</label>
+                  <input type="number" id="ohmI" class="input-field" placeholder="Current" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="resistance">Resistance (ohm)</label>
+                  <input type="number" id="ohmR" class="input-field" placeholder="Resistance" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcOhmBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearOhmBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="ohmResult"></div>
+              <div id="ohmFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Wave Equation -->
+          <div class="calc-container" id="waveCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="waves">Waves (v = f * lambda)</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="frequency">Frequency (Hz)</label>
+                  <input type="number" id="waveFreq" class="input-field" placeholder="e.g. 5e14" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="wavelength">Wavelength (m)</label>
+                  <input type="number" id="waveLambda" class="input-field" placeholder="e.g. 600e-9" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcWaveBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearWaveBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="waveResult"></div>
+              <div id="waveFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== BIOLOGY ==================== -->
+        <div class="page" id="page-biology">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-biology);">&#127807; <span data-i18n="biology">Biology</span></h1>
+          </div>
+
+          <!-- Punnett Square -->
+          <div class="calc-container" id="punnettCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="punnett_square">Punnett Square</h2>
+              <p class="text-sm text-muted mb-4">Enter 2-letter genotypes (e.g., Aa, AA, aa).</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="parent1_genotype">Parent 1 Genotype</label>
+                  <input type="text" id="punnettP1" class="input-field" placeholder="e.g. Aa" maxlength="2">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="parent2_genotype">Parent 2 Genotype</label>
+                  <input type="text" id="punnettP2" class="input-field" placeholder="e.g. Aa" maxlength="2">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--success" id="calcPunnettBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearPunnettBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="punnettResult"></div>
+              <div id="punnettFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Hardy-Weinberg -->
+          <div class="calc-container" id="hwCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="hardy_weinberg">Hardy-Weinberg Equilibrium</h2>
+              <p class="text-sm text-muted mb-4">Enter p or q (or both for validation). p + q must equal 1.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="allele_frequency_p">p (dominant allele frequency)</label>
+                  <input type="number" id="hwP" class="input-field" placeholder="e.g. 0.6" step="0.01" min="0" max="1">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="allele_frequency_q">q (recessive allele frequency)</label>
+                  <input type="number" id="hwQ" class="input-field" placeholder="e.g. 0.4" step="0.01" min="0" max="1">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--success" id="calcHWBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearHWBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="hwResult"></div>
+              <div id="hwFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Population Growth -->
+          <div class="calc-container" id="popGrowthCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="population_growth">Population Growth</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="initial_population">N0 (Initial Population)</label>
+                  <input type="number" id="popN0" class="input-field" placeholder="e.g. 100" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="growth_rate">r (Growth Rate)</label>
+                  <input type="number" id="popR" class="input-field" placeholder="e.g. 0.05" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="time">t (Time)</label>
+                  <input type="number" id="popT" class="input-field" placeholder="e.g. 10" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="carrying_capacity">K (Carrying Capacity, optional)</label>
+                  <input type="number" id="popK" class="input-field" placeholder="e.g. 10000" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--success" id="calcPopGrowthBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearPopGrowthBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="popGrowthResult"></div>
+              <div id="popGrowthFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== CONVERTERS ==================== -->
+        <div class="page" id="page-converters">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-ink);">&#128260; <span data-i18n="converters">Converters</span></h1>
+          </div>
+
+          <!-- Temperature -->
+          <div class="calc-container" id="tempCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="temperature_converter">Temperature Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="value_to_convert">Value</label>
+                  <input type="number" id="tempValue" class="input-field" placeholder="e.g. 100" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="from_unit">From</label>
+                  <select id="tempFrom" class="input-field">
+                    <option value="C">Celsius (°C)</option>
+                    <option value="F">Fahrenheit (°F)</option>
+                    <option value="K">Kelvin (K)</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label data-i18n="to_unit">To</label>
+                  <select id="tempTo" class="input-field">
+                    <option value="C">Celsius (°C)</option>
+                    <option value="F" selected>Fahrenheit (°F)</option>
+                    <option value="K">Kelvin (K)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcTempBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearTempBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="tempResult"></div>
+              <div id="tempFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Pressure -->
+          <div class="calc-container" id="pressCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="pressure_converter">Pressure Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="value_to_convert">Value</label>
+                  <input type="number" id="pressValue" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="from_unit">From</label>
+                  <select id="pressFrom" class="input-field">
+                    <option value="atm">atm</option>
+                    <option value="mmHg">mmHg</option>
+                    <option value="kPa">kPa</option>
+                    <option value="torr">torr</option>
+                    <option value="bar">bar</option>
+                    <option value="psi">psi</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label data-i18n="to_unit">To</label>
+                  <select id="pressTo" class="input-field">
+                    <option value="atm">atm</option>
+                    <option value="mmHg" selected>mmHg</option>
+                    <option value="kPa">kPa</option>
+                    <option value="torr">torr</option>
+                    <option value="bar">bar</option>
+                    <option value="psi">psi</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcPressBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearPressBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="pressResult"></div>
+              <div id="pressFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Volume -->
+          <div class="calc-container" id="volCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="volume_converter">Volume Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="value_to_convert">Value</label>
+                  <input type="number" id="volValue" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="from_unit">From</label>
+                  <select id="volFrom" class="input-field">
+                    <option value="L">L (liters)</option>
+                    <option value="mL">mL</option>
+                    <option value="cm3">cm3</option>
+                    <option value="m3">m3</option>
+                    <option value="gal">gal (US)</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label data-i18n="to_unit">To</label>
+                  <select id="volTo" class="input-field">
+                    <option value="L">L (liters)</option>
+                    <option value="mL" selected>mL</option>
+                    <option value="cm3">cm3</option>
+                    <option value="m3">m3</option>
+                    <option value="gal">gal (US)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcVolBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearVolBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="volResult"></div>
+              <div id="volFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Mass -->
+          <div class="calc-container" id="massConvCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="mass_converter">Mass Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="value_to_convert">Value</label>
+                  <input type="number" id="massConvValue" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="from_unit">From</label>
+                  <select id="massFrom" class="input-field">
+                    <option value="g">g (grams)</option>
+                    <option value="kg">kg</option>
+                    <option value="mg">mg</option>
+                    <option value="ug">ug</option>
+                    <option value="lb">lb</option>
+                    <option value="oz">oz</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label data-i18n="to_unit">To</label>
+                  <select id="massTo" class="input-field">
+                    <option value="g">g (grams)</option>
+                    <option value="kg" selected>kg</option>
+                    <option value="mg">mg</option>
+                    <option value="ug">ug</option>
+                    <option value="lb">lb</option>
+                    <option value="oz">oz</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcMassConvBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearMassConvBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="massConvResult"></div>
+              <div id="massConvFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Concentration -->
+          <div class="calc-container" id="concConvCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="concentration_converter">Concentration Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="value_to_convert">Value</label>
+                  <input type="number" id="concConvValue" class="input-field" placeholder="e.g. 0.5" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Molar Mass (g/mol, if needed)</label>
+                  <input type="number" id="concConvMM" class="input-field" placeholder="e.g. 58.44" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="from_unit">From</label>
+                  <select id="concConvFrom" class="input-field">
+                    <option value="molL">mol/L</option>
+                    <option value="gL">g/L</option>
+                    <option value="mmolL">mmol/L</option>
+                    <option value="mgL">mg/L</option>
+                    <option value="ppm">ppm</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label data-i18n="to_unit">To</label>
+                  <select id="concConvTo" class="input-field">
+                    <option value="molL">mol/L</option>
+                    <option value="gL" selected>g/L</option>
+                    <option value="mmolL">mmol/L</option>
+                    <option value="mgL">mg/L</option>
+                    <option value="ppm">ppm</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcConcConvBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearConcConvBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="concConvResult"></div>
+              <div id="concConvFormula"></div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Energy -->
+          <div class="calc-container" id="energyCalc">
+            <div class="calc-card">
+              <h2 class="calc-card__title" data-i18n="energy_converter">Energy Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label data-i18n="value_to_convert">Value</label>
+                  <input type="number" id="energyValue" class="input-field" placeholder="e.g. 100" step="any">
+                </div>
+                <div class="input-group">
+                  <label data-i18n="from_unit">From</label>
+                  <select id="energyFrom" class="input-field">
+                    <option value="J">J (Joules)</option>
+                    <option value="kJ">kJ</option>
+                    <option value="cal">cal</option>
+                    <option value="kcal">kcal</option>
+                    <option value="eV">eV</option>
+                    <option value="kWh">kWh</option>
+                    <option value="BTU">BTU</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label data-i18n="to_unit">To</label>
+                  <select id="energyTo" class="input-field">
+                    <option value="J">J (Joules)</option>
+                    <option value="kJ">kJ</option>
+                    <option value="cal" selected>cal</option>
+                    <option value="kcal">kcal</option>
+                    <option value="eV">eV</option>
+                    <option value="kWh">kWh</option>
+                    <option value="BTU">BTU</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcEnergyBtn" data-i18n="calculate">Calculate</button>
+                <button class="btn" id="clearEnergyBtn" data-i18n="clear">Clear</button>
+              </div>
+              <div class="calc-card__results" id="energyResult"></div>
+              <div id="energyFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== GAS LAWS ==================== -->
+        <div class="page" id="page-gaslaws">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#127767; Gas Laws</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Gas Laws Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Law Type</label>
+                  <select id="gasLawType" class="input-field">
+                    <option value="boyle">Boyle's Law (P1V1=P2V2)</option>
+                    <option value="charles">Charles's Law (V1/T1=V2/T2)</option>
+                    <option value="gaylussac">Gay-Lussac's (P1/T1=P2/T2)</option>
+                    <option value="combined">Combined (P1V1/T1=P2V2/T2)</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>P1 (atm)</label>
+                  <input type="number" id="gasP1" class="input-field" placeholder="Initial pressure" step="any">
+                </div>
+                <div class="input-group">
+                  <label>V1 (L)</label>
+                  <input type="number" id="gasV1" class="input-field" placeholder="Initial volume" step="any">
+                </div>
+                <div class="input-group">
+                  <label>T1 (K)</label>
+                  <input type="number" id="gasT1" class="input-field" placeholder="Initial temperature" step="any">
+                </div>
+                <div class="input-group">
+                  <label>P2 (atm)</label>
+                  <input type="number" id="gasP2" class="input-field" placeholder="Final pressure" step="any">
+                </div>
+                <div class="input-group">
+                  <label>V2 (L)</label>
+                  <input type="number" id="gasV2" class="input-field" placeholder="Final volume" step="any">
+                </div>
+                <div class="input-group">
+                  <label>T2 (K)</label>
+                  <input type="number" id="gasT2" class="input-field" placeholder="Final temperature" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcGasLawBtn">Calculate</button>
+                <button class="btn" id="clearGasLawBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="gasLawResult"></div>
+              <div id="gasLawFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== COLLIGATIVE PROPERTIES ==================== -->
+        <div class="page" id="page-colligative">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#10052; Colligative Properties</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Colligative Properties Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Property Type</label>
+                  <select id="colligType" class="input-field">
+                    <option value="freezing">Freezing Point Depression</option>
+                    <option value="boiling">Boiling Point Elevation</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>K (Constant, Kf or Kb)</label>
+                  <input type="number" id="colligK" class="input-field" placeholder="e.g. 1.86" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Molality (mol/kg)</label>
+                  <input type="number" id="colligMolality" class="input-field" placeholder="e.g. 0.5" step="any">
+                </div>
+                <div class="input-group">
+                  <label>i (van't Hoff factor)</label>
+                  <input type="number" id="colligI" class="input-field" placeholder="e.g. 2" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcColligBtn">Calculate</button>
+                <button class="btn" id="clearColligBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="colligResult"></div>
+              <div id="colligFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== KSP ==================== -->
+        <div class="page" id="page-ksp">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#9876; Solubility Product (Ksp)</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Ksp Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Direction</label>
+                  <select id="kspDirection" class="input-field">
+                    <option value="ksp_to_sol">Ksp to Solubility</option>
+                    <option value="sol_to_ksp">Solubility to Ksp</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Salt Type</label>
+                  <select id="kspType" class="input-field">
+                    <option value="AB">AB type</option>
+                    <option value="AB2">AB2 type</option>
+                    <option value="A2B">A2B type</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Ksp Value</label>
+                  <input type="number" id="kspValue" class="input-field" placeholder="e.g. 1.8e-10" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Solubility (mol/L)</label>
+                  <input type="number" id="kspSolubility" class="input-field" placeholder="e.g. 0.001" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--secondary" id="calcKspBtn">Calculate</button>
+                <button class="btn" id="clearKspBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="kspResult"></div>
+              <div id="kspFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== EMPIRICAL FORMULA ==================== -->
+        <div class="page" id="page-empirical">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-chemistry);">&#128300; Empirical Formula</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Empirical Formula Calculator</h2>
+              <p class="text-sm text-muted mb-4">Add elements with their mass percentages, then calculate.</p>
+              <div id="empirElements">
+                <div class="calc-card__inputs">
+                  <div class="input-group">
+                    <label>Element Symbol</label>
+                    <input type="text" class="input-field empir-symbol" placeholder="e.g. C">
+                  </div>
+                  <div class="input-group">
+                    <label>Mass %</label>
+                    <input type="number" class="input-field empir-mass" placeholder="e.g. 40" step="any">
+                  </div>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="empirAddBtn">+ Add Element</button>
+                <button class="btn btn--secondary" id="calcEmpirBtn">Calculate</button>
+                <button class="btn" id="clearEmpirBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="empirResult"></div>
+              <div id="empirFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== TRIGONOMETRY ==================== -->
+        <div class="page" id="page-trig">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-math);">&#128302; Trigonometry</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Trigonometry Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Function</label>
+                  <select id="trigFunc" class="input-field">
+                    <option value="sin">sin</option>
+                    <option value="cos">cos</option>
+                    <option value="tan">tan</option>
+                    <option value="all">All (sin, cos, tan)</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Angle (degrees)</label>
+                  <input type="number" id="trigAngle" class="input-field" placeholder="e.g. 45" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcTrigBtn">Calculate</button>
+                <button class="btn" id="clearTrigBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="trigResult"></div>
+              <div id="trigFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== LINEAR SYSTEM ==================== -->
+        <div class="page" id="page-linearsystem">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-math);">&#128201; Linear System (2x2)</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Linear System Solver (2x2)</h2>
+              <p class="text-sm text-muted mb-4">a1*x + b1*y = c1 &nbsp;&nbsp; a2*x + b2*y = c2</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>a1</label>
+                  <input type="number" id="lsA1" class="input-field" placeholder="e.g. 2" step="any">
+                </div>
+                <div class="input-group">
+                  <label>b1</label>
+                  <input type="number" id="lsB1" class="input-field" placeholder="e.g. 3" step="any">
+                </div>
+                <div class="input-group">
+                  <label>c1</label>
+                  <input type="number" id="lsC1" class="input-field" placeholder="e.g. 8" step="any">
+                </div>
+                <div class="input-group">
+                  <label>a2</label>
+                  <input type="number" id="lsA2" class="input-field" placeholder="e.g. 5" step="any">
+                </div>
+                <div class="input-group">
+                  <label>b2</label>
+                  <input type="number" id="lsB2" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label>c2</label>
+                  <input type="number" id="lsC2" class="input-field" placeholder="e.g. 11" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcLinearBtn">Calculate</button>
+                <button class="btn" id="clearLinearBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="linearResult"></div>
+              <div id="linearFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== FINANCIAL MATH ==================== -->
+        <div class="page" id="page-financial">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-math);">&#128176; Financial Math</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Interest Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Interest Type</label>
+                  <select id="finType" class="input-field">
+                    <option value="simple">Simple Interest</option>
+                    <option value="compound">Compound Interest</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Principal (P)</label>
+                  <input type="number" id="finP" class="input-field" placeholder="e.g. 1000" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Rate (r, % per period)</label>
+                  <input type="number" id="finR" class="input-field" placeholder="e.g. 5" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Time (t, periods)</label>
+                  <input type="number" id="finT" class="input-field" placeholder="e.g. 3" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcFinBtn">Calculate</button>
+                <button class="btn" id="clearFinBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="finResult"></div>
+              <div id="finFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== SCIENTIFIC NOTATION ==================== -->
+        <div class="page" id="page-scinotation">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-math);">&#x207F; Scientific Notation</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Scientific Notation Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Direction</label>
+                  <select id="sciDir" class="input-field">
+                    <option value="to_sci">Standard to Scientific</option>
+                    <option value="from_sci">Scientific to Standard</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Value</label>
+                  <input type="text" id="sciValue" class="input-field" placeholder="e.g. 0.0034 or 3.4e-3">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcSciBtn">Calculate</button>
+                <button class="btn" id="clearSciBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="sciResult"></div>
+              <div id="sciFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== PERCENTAGE ==================== -->
+        <div class="page" id="page-percentage">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-math);">% Percentage</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Percentage Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Mode</label>
+                  <select id="percMode" class="input-field">
+                    <option value="of">X% of Y</option>
+                    <option value="what_pct">X is what % of Y</option>
+                    <option value="change">% Change from X to Y</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>X</label>
+                  <input type="number" id="percX" class="input-field" placeholder="e.g. 25" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Y</label>
+                  <input type="number" id="percY" class="input-field" placeholder="e.g. 200" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--primary" id="calcPercBtn">Calculate</button>
+                <button class="btn" id="clearPercBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="percResult"></div>
+              <div id="percFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== COULOMB'S LAW ==================== -->
+        <div class="page" id="page-coulomb">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-physics);">&#9889; Coulomb's Law</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Coulomb's Law (F = kq1q2/r2)</h2>
+              <p class="text-sm text-muted mb-4">Fill in 3 of 4 fields to solve for the missing one.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>q1 (C)</label>
+                  <input type="number" id="coulombQ1" class="input-field" placeholder="e.g. 1e-6" step="any">
+                </div>
+                <div class="input-group">
+                  <label>q2 (C)</label>
+                  <input type="number" id="coulombQ2" class="input-field" placeholder="e.g. 2e-6" step="any">
+                </div>
+                <div class="input-group">
+                  <label>r (m)</label>
+                  <input type="number" id="coulombR" class="input-field" placeholder="e.g. 0.5" step="any">
+                </div>
+                <div class="input-group">
+                  <label>F (N)</label>
+                  <input type="number" id="coulombF" class="input-field" placeholder="Force" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcCoulombBtn">Calculate</button>
+                <button class="btn" id="clearCoulombBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="coulombResult"></div>
+              <div id="coulombFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== GRAVITATION ==================== -->
+        <div class="page" id="page-gravitation">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-physics);">&#127758; Gravitation</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Newton's Law of Gravitation</h2>
+              <p class="text-sm text-muted mb-4">Fill in 3 of 4 fields to solve for the missing one.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>m1 (kg)</label>
+                  <input type="number" id="gravM1" class="input-field" placeholder="e.g. 5.97e24" step="any">
+                </div>
+                <div class="input-group">
+                  <label>m2 (kg)</label>
+                  <input type="number" id="gravM2" class="input-field" placeholder="e.g. 70" step="any">
+                </div>
+                <div class="input-group">
+                  <label>r (m)</label>
+                  <input type="number" id="gravR" class="input-field" placeholder="e.g. 6.371e6" step="any">
+                </div>
+                <div class="input-group">
+                  <label>F (N)</label>
+                  <input type="number" id="gravF" class="input-field" placeholder="Force" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcGravBtn">Calculate</button>
+                <button class="btn" id="clearGravBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="gravResult"></div>
+              <div id="gravFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== CALORIMETRY ==================== -->
+        <div class="page" id="page-calorimetry">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-physics);">&#127777; Calorimetry</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Calorimetry (Q = mcDeltaT)</h2>
+              <p class="text-sm text-muted mb-4">Fill in 3 of 4 fields to solve for the missing one.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Q (J)</label>
+                  <input type="number" id="calorQ" class="input-field" placeholder="Heat" step="any">
+                </div>
+                <div class="input-group">
+                  <label>m (kg)</label>
+                  <input type="number" id="calorM" class="input-field" placeholder="Mass" step="any">
+                </div>
+                <div class="input-group">
+                  <label>c (J/kg.K)</label>
+                  <input type="number" id="calorC" class="input-field" placeholder="Specific heat" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Delta T (K)</label>
+                  <input type="number" id="calorDT" class="input-field" placeholder="Temp change" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcCalorBtn">Calculate</button>
+                <button class="btn" id="clearCalorBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="calorResult"></div>
+              <div id="calorFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== TORQUE ==================== -->
+        <div class="page" id="page-torque">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-physics);">&#128260; Torque</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Torque (tau = rF sin theta)</h2>
+              <p class="text-sm text-muted mb-4">Fill in 3 of 4 fields to solve for the missing one.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Torque (N.m)</label>
+                  <input type="number" id="torqueTau" class="input-field" placeholder="Torque" step="any">
+                </div>
+                <div class="input-group">
+                  <label>r (m)</label>
+                  <input type="number" id="torqueR" class="input-field" placeholder="Lever arm" step="any">
+                </div>
+                <div class="input-group">
+                  <label>F (N)</label>
+                  <input type="number" id="torqueF" class="input-field" placeholder="Force" step="any">
+                </div>
+                <div class="input-group">
+                  <label>theta (degrees)</label>
+                  <input type="number" id="torqueTheta" class="input-field" placeholder="e.g. 90" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcTorqueBtn">Calculate</button>
+                <button class="btn" id="clearTorqueBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="torqueResult"></div>
+              <div id="torqueFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== DOPPLER EFFECT ==================== -->
+        <div class="page" id="page-doppler">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-physics);">&#128266; Doppler Effect</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Doppler Effect Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>f (source frequency, Hz)</label>
+                  <input type="number" id="dopplerF" class="input-field" placeholder="e.g. 440" step="any">
+                </div>
+                <div class="input-group">
+                  <label>v_obs (observer velocity, m/s)</label>
+                  <input type="number" id="dopplerVObs" class="input-field" placeholder="e.g. 0" step="any">
+                </div>
+                <div class="input-group">
+                  <label>v_src (source velocity, m/s)</label>
+                  <input type="number" id="dopplerVSrc" class="input-field" placeholder="e.g. 30" step="any">
+                </div>
+                <div class="input-group">
+                  <label>f' (observed frequency, Hz)</label>
+                  <input type="number" id="dopplerFPrime" class="input-field" placeholder="Observed frequency" step="any">
+                </div>
+                <div class="input-group">
+                  <label>v (speed of sound, m/s)</label>
+                  <input type="number" id="dopplerV" class="input-field" placeholder="343" step="any" value="343">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcDopplerBtn">Calculate</button>
+                <button class="btn" id="clearDopplerBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="dopplerResult"></div>
+              <div id="dopplerFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== PROJECTILE MOTION ==================== -->
+        <div class="page" id="page-projectile">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-physics);">&#127923; Projectile Motion</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Projectile Motion Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>v0 (initial velocity, m/s)</label>
+                  <input type="number" id="projV0" class="input-field" placeholder="e.g. 20" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Angle (degrees)</label>
+                  <input type="number" id="projAngle" class="input-field" placeholder="e.g. 45" step="any">
+                </div>
+                <div class="input-group">
+                  <label>g (m/s2)</label>
+                  <input type="number" id="projG" class="input-field" placeholder="9.81" step="any" value="9.81">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcProjectileBtn">Calculate</button>
+                <button class="btn" id="clearProjectileBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="projectileResult"></div>
+              <div id="projectileFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== THIN LENSES ==================== -->
+        <div class="page" id="page-lenses">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-physics);">&#128302; Thin Lenses</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Thin Lens Equation (1/f = 1/do + 1/di)</h2>
+              <p class="text-sm text-muted mb-4">Fill in 2 of 3 fields to solve for the missing one.</p>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>f (focal length, cm)</label>
+                  <input type="number" id="lensF" class="input-field" placeholder="Focal length" step="any">
+                </div>
+                <div class="input-group">
+                  <label>do (object distance, cm)</label>
+                  <input type="number" id="lensDo" class="input-field" placeholder="Object distance" step="any">
+                </div>
+                <div class="input-group">
+                  <label>di (image distance, cm)</label>
+                  <input type="number" id="lensDi" class="input-field" placeholder="Image distance" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--tertiary" id="calcLensBtn">Calculate</button>
+                <button class="btn" id="clearLensBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="lensResult"></div>
+              <div id="lensFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== CHI-SQUARE ==================== -->
+        <div class="page" id="page-chisquare">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-biology);">&#967; Chi-Square Test</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Chi-Square (X2) Calculator</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group" style="grid-column:1/-1;">
+                  <label>Observed values (comma separated)</label>
+                  <input type="text" id="chiObs" class="input-field" placeholder="e.g. 25, 30, 15, 20">
+                </div>
+                <div class="input-group" style="grid-column:1/-1;">
+                  <label>Expected values (comma separated)</label>
+                  <input type="text" id="chiExp" class="input-field" placeholder="e.g. 22.5, 22.5, 22.5, 22.5">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--success" id="calcChiBtn">Calculate</button>
+                <button class="btn" id="clearChiBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="chiResult"></div>
+              <div id="chiFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== DNA/RNA ==================== -->
+        <div class="page" id="page-dnarna">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-biology);">&#129516; DNA/RNA</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">DNA/RNA Tool</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group" style="grid-column:1/-1;">
+                  <label>DNA Sequence (5' to 3')</label>
+                  <input type="text" id="dnaInput" class="input-field" placeholder="e.g. ATCGATCG">
+                </div>
+                <div class="input-group">
+                  <label>Operation</label>
+                  <select id="dnaOp" class="input-field">
+                    <option value="transcribe">Transcribe to mRNA</option>
+                    <option value="complement">Complementary Strand</option>
+                    <option value="translate">Translate to Amino Acids</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--success" id="calcDnaBtn">Calculate</button>
+                <button class="btn" id="clearDnaBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="dnaResult"></div>
+              <div id="dnaFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== BLOOD TYPES ==================== -->
+        <div class="page" id="page-bloodtypes">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-biology);">&#129653; Blood Types</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Blood Type Compatibility</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Blood Type</label>
+                  <select id="bloodType" class="input-field">
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--success" id="calcBloodBtn">Show Info</button>
+              </div>
+              <div class="calc-card__results" id="bloodResult"></div>
+              <div id="bloodFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== BMI ==================== -->
+        <div class="page" id="page-bmi">
+          <div class="section-header">
+            <h1 class="section-header__title" style="color:var(--clr-biology);">&#9878; BMI</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Body Mass Index (BMI)</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Weight (kg)</label>
+                  <input type="number" id="bmiWeight" class="input-field" placeholder="e.g. 70" step="any">
+                </div>
+                <div class="input-group">
+                  <label>Height (m)</label>
+                  <input type="number" id="bmiHeight" class="input-field" placeholder="e.g. 1.75" step="any">
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--success" id="calcBmiBtn">Calculate</button>
+                <button class="btn" id="clearBmiBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="bmiResult"></div>
+              <div id="bmiFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== LENGTH CONVERTER ==================== -->
+        <div class="page" id="page-convlength">
+          <div class="section-header">
+            <h1 class="section-header__title">&#128207; Length Converter</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Length Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Value</label>
+                  <input type="number" id="lenValue" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label>From</label>
+                  <select id="lenFrom" class="input-field">
+                    <option value="m">m</option>
+                    <option value="km">km</option>
+                    <option value="cm">cm</option>
+                    <option value="mm">mm</option>
+                    <option value="um">um</option>
+                    <option value="nm">nm</option>
+                    <option value="mi">mi</option>
+                    <option value="yd">yd</option>
+                    <option value="ft">ft</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>To</label>
+                  <select id="lenTo" class="input-field">
+                    <option value="m">m</option>
+                    <option value="km" selected>km</option>
+                    <option value="cm">cm</option>
+                    <option value="mm">mm</option>
+                    <option value="um">um</option>
+                    <option value="nm">nm</option>
+                    <option value="mi">mi</option>
+                    <option value="yd">yd</option>
+                    <option value="ft">ft</option>
+                    <option value="in">in</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcLenBtn">Calculate</button>
+                <button class="btn" id="clearLenBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="lenResult"></div>
+              <div id="lenFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== TIME CONVERTER ==================== -->
+        <div class="page" id="page-convtime">
+          <div class="section-header">
+            <h1 class="section-header__title">&#9201; Time Converter</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Time Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Value</label>
+                  <input type="number" id="timeValue" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label>From</label>
+                  <select id="timeFrom" class="input-field">
+                    <option value="s">s</option>
+                    <option value="min">min</option>
+                    <option value="h">h</option>
+                    <option value="day">day</option>
+                    <option value="week">week</option>
+                    <option value="month">month</option>
+                    <option value="year">year</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>To</label>
+                  <select id="timeTo" class="input-field">
+                    <option value="s" selected>s</option>
+                    <option value="min">min</option>
+                    <option value="h">h</option>
+                    <option value="day">day</option>
+                    <option value="week">week</option>
+                    <option value="month">month</option>
+                    <option value="year">year</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcTimeBtn">Calculate</button>
+                <button class="btn" id="clearTimeBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="timeResult"></div>
+              <div id="timeFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== SPEED CONVERTER ==================== -->
+        <div class="page" id="page-convspeed">
+          <div class="section-header">
+            <h1 class="section-header__title">&#127739; Speed Converter</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Speed Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Value</label>
+                  <input type="number" id="speedValue" class="input-field" placeholder="e.g. 100" step="any">
+                </div>
+                <div class="input-group">
+                  <label>From</label>
+                  <select id="speedFrom" class="input-field">
+                    <option value="ms">m/s</option>
+                    <option value="kmh">km/h</option>
+                    <option value="mph">mph</option>
+                    <option value="kn">kn</option>
+                    <option value="fts">ft/s</option>
+                    <option value="mach">mach</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>To</label>
+                  <select id="speedTo" class="input-field">
+                    <option value="ms">m/s</option>
+                    <option value="kmh" selected>km/h</option>
+                    <option value="mph">mph</option>
+                    <option value="kn">kn</option>
+                    <option value="fts">ft/s</option>
+                    <option value="mach">mach</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcSpeedBtn">Calculate</button>
+                <button class="btn" id="clearSpeedBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="speedResult"></div>
+              <div id="speedFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== DENSITY CONVERTER ==================== -->
+        <div class="page" id="page-convdensity">
+          <div class="section-header">
+            <h1 class="section-header__title">Density Converter</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Density Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Value</label>
+                  <input type="number" id="densValue" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label>From</label>
+                  <select id="densFrom" class="input-field">
+                    <option value="kgm3">kg/m3</option>
+                    <option value="gcm3">g/cm3</option>
+                    <option value="gmL">g/mL</option>
+                    <option value="lbft3">lb/ft3</option>
+                    <option value="lbgal">lb/gal</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>To</label>
+                  <select id="densTo" class="input-field">
+                    <option value="kgm3" selected>kg/m3</option>
+                    <option value="gcm3">g/cm3</option>
+                    <option value="gmL">g/mL</option>
+                    <option value="lbft3">lb/ft3</option>
+                    <option value="lbgal">lb/gal</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcDensBtn">Calculate</button>
+                <button class="btn" id="clearDensBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="densResult"></div>
+              <div id="densFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== AREA CONVERTER ==================== -->
+        <div class="page" id="page-convarea">
+          <div class="section-header">
+            <h1 class="section-header__title">&#9634; Area Converter</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Area Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Value</label>
+                  <input type="number" id="areaValue" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label>From</label>
+                  <select id="areaFrom" class="input-field">
+                    <option value="m2">m2</option>
+                    <option value="km2">km2</option>
+                    <option value="cm2">cm2</option>
+                    <option value="ha">ha</option>
+                    <option value="acre">acre</option>
+                    <option value="ft2">ft2</option>
+                    <option value="in2">in2</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>To</label>
+                  <select id="areaTo" class="input-field">
+                    <option value="m2" selected>m2</option>
+                    <option value="km2">km2</option>
+                    <option value="cm2">cm2</option>
+                    <option value="ha">ha</option>
+                    <option value="acre">acre</option>
+                    <option value="ft2">ft2</option>
+                    <option value="in2">in2</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcAreaBtn">Calculate</button>
+                <button class="btn" id="clearAreaBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="areaResult"></div>
+              <div id="areaFormula"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== POWER CONVERTER ==================== -->
+        <div class="page" id="page-convpower">
+          <div class="section-header">
+            <h1 class="section-header__title">&#9889; Power Converter</h1>
+          </div>
+
+          <div class="calc-container">
+            <div class="calc-card">
+              <h2 class="calc-card__title">Power Converter</h2>
+              <div class="calc-card__inputs">
+                <div class="input-group">
+                  <label>Value</label>
+                  <input type="number" id="powerValue" class="input-field" placeholder="e.g. 1" step="any">
+                </div>
+                <div class="input-group">
+                  <label>From</label>
+                  <select id="powerFrom" class="input-field">
+                    <option value="W">W</option>
+                    <option value="kW">kW</option>
+                    <option value="hp">hp</option>
+                    <option value="BTUh">BTU/h</option>
+                    <option value="cals">cal/s</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>To</label>
+                  <select id="powerTo" class="input-field">
+                    <option value="W" selected>W</option>
+                    <option value="kW">kW</option>
+                    <option value="hp">hp</option>
+                    <option value="BTUh">BTU/h</option>
+                    <option value="cals">cal/s</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calc-card__actions">
+                <button class="btn btn--warning" id="calcPowerConvBtn">Calculate</button>
+                <button class="btn" id="clearPowerConvBtn">Clear</button>
+              </div>
+              <div class="calc-card__results" id="powerConvResult"></div>
+              <div id="powerConvFormula"></div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- Scroll to top -->
+    <button class="scroll-top" id="scrollTop">&#8593;</button>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span data-i18n="app_name">Schematica</span> &mdash; <span data-i18n="made_with">Made with passion for science education.</span>
+    </footer>
+  </div>
+
+  <!-- ====== SCRIPTS ====== -->
+  <!-- Core -->
+  <script src="js/core/i18n.js"></script>
+  <script src="js/core/periodic-table.js"></script>
+  <script src="js/core/app.js"></script>
+
+  <!-- Chemistry Modules -->
+  <script src="js/chemistry/molar-mass.js"></script>
+  <script src="js/chemistry/solutions.js"></script>
+  <script src="js/chemistry/stoichiometry.js"></script>
+  <script src="js/chemistry/thermochemistry.js"></script>
+  <script src="js/chemistry/electrochemistry.js"></script>
+  <script src="js/chemistry/kinetics.js"></script>
+  <script src="js/chemistry/organic.js"></script>
+
+  <!-- Math Module -->
+  <script src="js/math/calculator.js"></script>
+
+  <!-- Physics Module -->
+  <script src="js/physics/physics.js"></script>
+
+  <!-- Biology Module -->
+  <script src="js/biology/biology.js"></script>
+
+  <!-- Converters Module -->
+  <script src="js/converters/converters.js"></script>
+
+  <!-- Advanced Modules -->
+  <script src="js/chemistry/chemistry-advanced.js"></script>
+  <script src="js/math/math-advanced.js"></script>
+  <script src="js/physics/physics-advanced.js"></script>
+  <script src="js/biology/biology-advanced.js"></script>
+  <script src="js/converters/converters-advanced.js"></script>
+
+  <!-- Init All Modules -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize all calculator modules
+      ChemistryMolarMass.init();
+      ChemistrySolutions.init();
+      ChemistryStoichiometry.init();
+      ChemistryThermochemistry.init();
+      ChemistryElectrochemistry.init();
+      ChemistryKinetics.init();
+      ChemistryOrganic.init();
+      ChemistryAcidBase.init();
+      ChemistryGasLaws.init();
+      ChemistryColligative.init();
+      ChemistryKsp.init();
+      ChemistryEmpirical.init();
+      MathCalculator.init();
+      MathTrigonometry.init();
+      MathLinearSystem.init();
+      MathFinancial.init();
+      MathScientificNotation.init();
+      MathPercentage.init();
+      PhysicsCalculator.init();
+      PhysicsCoulomb.init();
+      PhysicsGravitation.init();
+      PhysicsCalorimetry.init();
+      PhysicsTorque.init();
+      PhysicsDoppler.init();
+      PhysicsProjectile.init();
+      PhysicsLenses.init();
+      BiologyCalculator.init();
+      BioChiSquare.init();
+      BioDNARNA.init();
+      BioBloodType.init();
+      BioBMI.init();
+      Converters.init();
+      ConvLength.init();
+      ConvTime.init();
+      ConvSpeed.init();
+      ConvDensity.init();
+      ConvArea.init();
+      ConvPower.init();
+
+      // Fix element modal close on background click
+      document.getElementById('elementModal').addEventListener('click', function(e) {
+        if (e.target === this) { this.classList.add('hidden'); this.style.display = ''; }
+      });
+    });
+  </script>
+</body>
+</html>
